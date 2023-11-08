@@ -1,0 +1,5 @@
+server/__pycache__
+test/*.wav
+test/*.mp3
+test/*.ogg
+test/speaker_cache.json

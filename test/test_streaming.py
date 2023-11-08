@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -119,8 +120,25 @@ if __name__ == "__main__":
     with open("./default_speaker.json", "r") as file:
         speaker = json.load(file)
 
+    speaker_cache_file = "./speaker_cache.json"
     if args.ref_file is not None:
-        print("Computing the latents for a new reference...")
-        speaker = get_speaker(args.ref_file,args.server_url)
+        if os.path.exists(speaker_cache_file):
+            with open(speaker_cache_file, "r") as file:
+                cached_speakers = json.load(file)
+            if args.ref_file in cached_speakers:
+                print("Loading cached speaker...")
+                speaker = cached_speakers[args.ref_file]
+            else:
+                print("Computing the latents for a new reference...")
+                speaker = get_speaker(args.ref_file,args.server_url)
+                cached_speakers[args.ref_file] = speaker
+                with open(speaker_cache_file, "w") as file:
+                    json.dump(cached_speakers, file)
+        else:
+            print("Computing the latents for a new reference...")
+            speaker = get_speaker(args.ref_file,args.server_url)
+            cached_speakers = {args.ref_file: speaker}
+            with open(speaker_cache_file, "w") as file:
+                json.dump(cached_speakers, file)
 
     audio = stream_ffplay(tts(args.text, speaker,args.language,args.server_url,args.decoder,args.stream_chunk_size), args.output_file, save=bool(args.output_file))

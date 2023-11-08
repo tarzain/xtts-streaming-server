@@ -1,3 +1,41 @@
+import warnings
+import contextlib
+
+import requests
+from urllib3.exceptions import InsecureRequestWarning
+
+old_merge_environment_settings = requests.Session.merge_environment_settings
+
+@contextlib.contextmanager
+def no_ssl_verification():
+    opened_adapters = set()
+
+    def merge_environment_settings(self, url, proxies, stream, verify, cert):
+        # Verification happens only once per connection so we need to close
+        # all the opened adapters once we're done. Otherwise, the effects of
+        # verify=False persist beyond the end of this context manager.
+        opened_adapters.add(self.get_adapter(url))
+
+        settings = old_merge_environment_settings(self, url, proxies, stream, verify, cert)
+        settings['verify'] = False
+
+        return settings
+
+    requests.Session.merge_environment_settings = merge_environment_settings
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', InsecureRequestWarning)
+            yield
+    finally:
+        requests.Session.merge_environment_settings = old_merge_environment_settings
+
+        for adapter in opened_adapters:
+            try:
+                adapter.close()
+            except:
+                pass
+
 import base64
 import io
 import os
@@ -21,7 +59,7 @@ from TTS.utils.generic_utils import get_user_data_dir
 from TTS.utils.manage import ModelManager
 
 torch.set_num_threads(int(os.environ.get("NUM_THREADS", "2")))
-device = torch.device("cuda")
+device = torch.device("cpu")
 
 model_name = "tts_models/multilingual/multi-dataset/xtts_v1.1"
 print("Downloading XTTS Model:",model_name,flush=True)
@@ -33,7 +71,7 @@ print("Loading XTTS",flush=True)
 config = XttsConfig()
 config.load_json(os.path.join(model_path, "config.json"))
 model = Xtts.init_from_config(config)
-model.load_checkpoint(config, checkpoint_dir=model_path, eval=True, use_deepspeed=True)
+model.load_checkpoint(config, checkpoint_dir=model_path, eval=True, use_deepspeed=False)
 model.to(device)
 print("XTTS Loaded.",flush=True)
 
@@ -51,7 +89,9 @@ app = FastAPI(
 @app.post("/clone_speaker")
 def predict_speaker(wav_file: UploadFile):
     """Compute conditioning inputs from reference audio file."""
-    temp_audio_name = next(tempfile._get_candidate_names())
+    speaker_cache_dir = "speaker_cache"
+    os.makedirs(speaker_cache_dir, exist_ok=True)
+    temp_audio_name = os.path.join(speaker_cache_dir, next(tempfile._get_candidate_names()))
     with open(temp_audio_name, "wb") as temp, torch.inference_mode():
         temp.write(io.BytesIO(wav_file.file.read()).getbuffer())
         gpt_cond_latent, _, speaker_embedding = model.get_conditioning_latents(
