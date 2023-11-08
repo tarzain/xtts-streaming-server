@@ -14,3 +14,8 @@ $ uvicorn main:app --host 0.0.0.0 --port 8000
 $ cd client
 $ python tts.py --ref_file reference_audio_file_for_cloning.wav --text "text to dictate"
 ```
+
+# TODOs
+- [ ] add utterance timing detection to speech recognition server
+- [ ] modify speech synthesis server to support main async client
+- [ ] connect and test chat_completions endpoint with LMStudio API
