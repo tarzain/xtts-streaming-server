@@ -1,4 +1,6 @@
+.DS_Store
 server/__pycache__
+server/speaker_cache
 test/*.wav
 test/*.mp3
 test/*.ogg
