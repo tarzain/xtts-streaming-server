@@ -2,52 +2,15 @@
 
 ## Running the server
 
-To run a pre-built container (CUDA 11.7):
-
-```bash
-$ docker run --gpus=all -e COQUI_TOS_AGREED=1 --rm -p 8000:80 ghcr.io/coqui-ai/xtts-streaming-server:latest
-```
-
-CUDA 11.8 version (for newer cards, tested on 4060 and L4 instance)
-```bash
-$ docker run --gpus=all -e COQUI_TOS_AGREED=1 --rm -p 8000:80  ghcr.io/coqui-ai/xtts-streaming-server:latest-cuda118
-```
-
-If you have already downloaded v1.1 model and like to use this server, and using Ubuntu, change your /home/YOUR_USER_NAME
-```bash
-$ docker run -v /home/YOUR_USER_NAME/.local/share/tts/tts_models--multilingual--multi-dataset--xtts_v1.1:/root/.local/share/tts/tts_models--multilingual--multi-dataset--xtts_v1.1 --env NVIDIA_DISABLE_REQUIRE=1 --gpus=all -e COQUI_TOS_AGREED=1  --rm -p 8000:80 ghcr.io/coqui-ai/xtts-streaming-server:latest-cuda118`
-```
-Setting the `COQUI_TOS_AGREED` environment variable to `1` indicates you have read and agreed to
-the terms of the [CPML license](https://coqui.ai/cpml).
-
-## Testing the server
-
-1. Generate audio with the test script:
-
-```bash
-$ cd test
-$ python -m pip install -r requirements.txt
-$ python test_streaming.py
-```
-
-## Building the container
-
-1. To build the Docker container (Pytorch 2.01 Cuda 11.7) :
-
+1. Create a conda environment and activate it `conda create -n tts python=3.11; conda activate tts`
+2. Install requirements with `pip install -r requirements.txt --use-deprecated=legacy-resolver`
+3. Run the server
 ```bash
 $ cd server
-$ docker build -t xtts-stream .
+$ uvicorn main:app --host 0.0.0.0 --port 8000
 ```
-For Pytorch 2.1 and CUDA 11.8 version (when running set NVIDIA_DISABLE_REQUIRE=1 if you have Cuda < 11.8 drivers) 
+4. Run the client
 ```bash
-$ cd server
-# docker build -t xtts-stream . -f Dockerfile.cuda118
+$ cd client
+$ python main.py --ref_file reference_audio_file_for_cloning.wav --text "text to dictate"
 ```
-2. Run the server container:
-
-```bash
-$ docker run --gpus=all -e COQUI_TOS_AGREED=1 --rm -p 8000:80 xtts-stream
-```
-
-Setting the `COQUI_TOS_AGREED` environment variable to `1` indicates you have read and agreed to
-the terms of the [CPML license](https://coqui.ai/cpml).
