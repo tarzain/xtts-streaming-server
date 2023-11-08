@@ -289,11 +289,8 @@ def main(device, src, bundle):
     def infer():
         for _ in range(NUM_ITER):
             chunk = q.get()
-            print("chunk: ", chunk)
-            print("Mean, max, min: ", chunk.mean(), chunk.max(), chunk.min())
             segment = cacher(chunk[:, 0])
             transcript = pipeline.infer(segment)
-            print(segment.shape)
             print(transcript, end="\r", flush=True)
 
     import torch.multiprocessing as mp
@@ -309,7 +306,7 @@ def main(device, src, bundle):
 if __name__ == "__main__":
     main(
         device="avfoundation",
-        src=":1",
+        src=":0",
         bundle=torchaudio.pipelines.EMFORMER_RNNT_BASE_LIBRISPEECH,
     )
 
