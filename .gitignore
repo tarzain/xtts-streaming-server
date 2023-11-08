@@ -6,3 +6,4 @@ client/*.wav
 client/*.mp3
 client/*.ogg
 client/speaker_cache.json
+llm-server/models/
