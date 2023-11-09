@@ -61,11 +61,15 @@ if __name__ == "__main__":
         response = openai.chat.completions.create(
             model='gpt-3.5-turbo',
             messages=[
-                {'role': 'user', 'content': "What's 1+1? Answer in one word."}
+                {'role': 'assistant', 'content': "I am an angry, ugly, furby."},
+                {'role': 'user', 'content': "Who are you?"}
             ],
             temperature=0,
-            stream=True  # this time, we set stream=True
+            stream=True,
+            max_tokens=200,
+            stop=['[/USER]']
         )
 
         for chunk in response:
-            print(chunk)
+            if (chunk.choices[0].delta.content and chunk.choices[0].delta.content != '%'):
+                print(chunk.choices[0].delta.content, sep='', end='', flush=True)
